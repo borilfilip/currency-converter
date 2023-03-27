@@ -1,14 +1,14 @@
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
-import { ReactElement } from "react";
+import { ChangeEvent, ReactElement, useState } from "react";
 import { apiUrl } from "./App";
 
 interface Currency {
   country: string;
   currency: string;
-  amount: string;
+  amount: number;
   code: string;
-  rate: string;
+  rate: number;
 }
 
 function Converter(): ReactElement {
@@ -16,6 +16,8 @@ function Converter(): ReactElement {
     queryKey: ["repoData"],
     queryFn: () => axios.get(apiUrl).then((res) => res.data),
   });
+  const [input, setInput] = useState<string>("");
+  const [select, setSelect] = useState<string | undefined>();
 
   if (isLoading) return <div>Loading...</div>;
 
@@ -38,14 +40,21 @@ function Converter(): ReactElement {
           [cols[3]]: {
             country: cols[0],
             currency: cols[1],
-            amount: cols[2],
+            amount: Number.parseInt(cols[2]),
             code: cols[3],
-            rate: cols[4],
+            rate: Number.parseFloat(cols[4]),
           },
         };
       }
     });
   }
+
+  const amount = Number.parseFloat(input);
+  const selectedCurrency = select || Object.values(currencies)[0].code;
+  const result = amount
+    ? (amount * currencies[selectedCurrency].rate) /
+      currencies[selectedCurrency].amount
+    : "?";
 
   return (
     <div>
@@ -60,7 +69,7 @@ function Converter(): ReactElement {
           </tr>
         </thead>
         <tbody>
-          {Object.values(currencies).map((currency: Currency) => (
+          {Object.values(currencies).map((currency) => (
             <tr key={currency.code}>
               <td>{currency.country}</td>
               <td>{currency.currency}</td>
@@ -71,6 +80,23 @@ function Converter(): ReactElement {
           ))}
         </tbody>
       </table>
+      <input
+        type="number"
+        value={input}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          setInput(event.target.value)
+        }
+      />{" "}
+      <select
+        onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+          setSelect(event.target.value)
+        }
+      >
+        {Object.values(currencies).map((currency) => (
+          <option key={currency.code}>{currency.code}</option>
+        ))}
+      </select>{" "}
+      = {result} CZK
       <div>{isFetching ? "Updating..." : ""}</div>
     </div>
   );
