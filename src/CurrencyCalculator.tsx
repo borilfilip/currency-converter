@@ -1,4 +1,4 @@
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { Currencies } from "./helpers";
 import styled from "styled-components";
 
@@ -11,7 +11,7 @@ const Wrapper = styled.div`
   justify-content: center;
 
   & > * {
-    margin: 0.2rem 0;
+    margin: 0.3rem 0;
   }
 
   & > *:not(:last-child) {
@@ -20,7 +20,7 @@ const Wrapper = styled.div`
 `;
 
 const Input = styled.input`
-  width: 5rem;
+  width: 7rem;
   flex: 1;
   font-size: 2rem;
   text-align: end;
@@ -44,7 +44,7 @@ const Select = styled.select`
   }
 `;
 
-const Result = styled.span`
+const Text = styled.span`
   font-size: 2rem;
 
   @media (max-width: 480px) {
@@ -53,39 +53,71 @@ const Result = styled.span`
 `;
 
 function CurrencyCalculator({ currencies }: { currencies: Currencies }) {
-  const [input, setInput] = useState<string>("1");
-  const [select, setSelect] = useState<string | undefined>();
+  const [foreignAmountInput, setForeignAmountInput] = useState<string>("1");
+  const [czkAmountInput, setCzkAmountInput] = useState<string>("");
+  const [currencySelect, setCurrencySelect] = useState<string | undefined>();
 
-  const amount = Number.parseFloat(input);
-  const selectedCurrency = select || Object.values(currencies)[0].code;
-  const result =
-    amount || amount === 0
-      ? Math.round(
-          ((amount * currencies[selectedCurrency].rate) /
-            currencies[selectedCurrency].amount) *
-            1000
-        ) / 1000
-      : "?";
+  const round = (amount: number) => Math.round(amount * 1000) / 1000;
+
+  const selectedCurrency = currencySelect || Object.values(currencies)[0].code;
+  const rate = currencies[selectedCurrency].rate;
+  const amount = currencies[selectedCurrency].amount;
+
+  const convertFromCzk = (input: string) => {
+    const toConvert = Number.parseFloat(input);
+    return !isNaN(toConvert)
+      ? round((toConvert / rate) * amount).toString()
+      : "";
+  };
+
+  const convertToCzk = (input: string) => {
+    const toConvert = Number.parseFloat(input);
+    return !isNaN(toConvert)
+      ? round((toConvert * rate) / amount).toString()
+      : "";
+  };
+
+  useEffect(() => {
+    setCzkAmountInput(convertToCzk(foreignAmountInput));
+    // We want this only on currency change (= also when currencies are loaded)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCurrency]);
+
+  const onForeignAmountInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.target.value;
+    setForeignAmountInput(input);
+    setCzkAmountInput(convertToCzk(input));
+  };
+
+  const onCzkAmountInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.target.value;
+    setForeignAmountInput(convertFromCzk(input));
+    setCzkAmountInput(input);
+  };
 
   return (
     <Wrapper>
       <Input
         type="number"
-        value={input}
-        onChange={(event: ChangeEvent<HTMLInputElement>) =>
-          setInput(event.target.value)
-        }
+        value={foreignAmountInput}
+        onChange={onForeignAmountInputChange}
       />
       <Select
         onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-          setSelect(event.target.value)
+          setCurrencySelect(event.target.value)
         }
       >
         {Object.values(currencies).map((currency) => (
           <option key={currency.code}>{currency.code}</option>
         ))}
       </Select>
-      <Result>{` = ${result} CZK`}</Result>
+      <Text>=</Text>
+      <Input
+        type="number"
+        value={czkAmountInput}
+        onChange={onCzkAmountInputChange}
+      />
+      <Text>CZK</Text>
     </Wrapper>
   );
 }
