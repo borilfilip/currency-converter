@@ -4,9 +4,10 @@ exports.handler = async () => {
   let statusCode, data;
 
   try {
-    data = await fetch(
+    const response = await fetch(
       "https://www.cnb.cz/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/daily.txt"
     );
+    data = await response.json();
     statusCode = 200;
   } catch (err) {
     data = err.message;

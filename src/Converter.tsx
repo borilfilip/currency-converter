@@ -32,8 +32,8 @@ function Converter(): ReactElement {
     queryKey: ["currencies"],
     queryFn: () =>
       axios.get(apiUrl).then(({ data }) => {
-        if (data.statusCode !== 200) {
-          throw new Error(data.body);
+        if (data?.statusCode !== 200) {
+          throw new Error(data?.body || "Unknown error");
         }
         return data.body;
       }),
