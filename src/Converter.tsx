@@ -30,7 +30,13 @@ const Status = styled.div<{ red?: boolean }>`
 function Converter(): ReactElement {
   const { isLoading, error, data } = useQuery({
     queryKey: ["currencies"],
-    queryFn: () => axios.get(apiUrl).then((res) => res.data),
+    queryFn: () =>
+      axios.get(apiUrl).then(({ data }) => {
+        if (data.statusCode !== 200) {
+          throw new Error(data.body);
+        }
+        return data.body;
+      }),
   });
 
   if (isLoading) return <Status>Loading...</Status>;
