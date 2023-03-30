@@ -15,6 +15,6 @@ exports.handler = async () => {
 
   return {
     statusCode,
-    body: data,
+    body: JSON.stringify(data),
   };
 };
